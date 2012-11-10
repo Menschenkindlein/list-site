@@ -2,6 +2,12 @@
 
 (defvar *root* "/home/maximo/WorkOnNow/list-site/")
 
+(defvar *result-root* (merge-pathnames (make-pathname
+					:directory '(:relative "result"))
+				       *root*))
+
+(defvar *local-root* nil "relative path to root")
+
 (make-grammar default)
 
 (default-defrule whitespace (+ (or #\Space #\Tab))
@@ -16,7 +22,7 @@
 				(* newline))
   (:destructure (par-text newlines)
     (declare (ignore newlines))
-    (list 'paragraph (text par-text))))
+    (list 'paragraph (string-trim '(#\Space) (text par-text)))))
 
 (default-copy-grammar site)
 

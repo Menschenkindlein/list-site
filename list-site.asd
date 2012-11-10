@@ -5,5 +5,7 @@
 	       (:module "objects"
 			:components ((:file "common")
 				     (:file "author")
-				     (:file "article")))
+				     (:file "article")
+				     (:file "style")
+				     (:file "main")))
 	       (:file "main")))
