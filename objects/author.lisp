@@ -4,7 +4,7 @@
 
 (site-defrule author (* character)
   (:lambda (result)
-    (list 'author-body (string-trim '(#\Newline) (text result)))))
+    (read-from-string (text result))))
 
 (add-html-structure 'author
 		    (lambda (name body)

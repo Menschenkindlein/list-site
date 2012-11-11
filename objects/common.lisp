@@ -1,5 +1,7 @@
 (in-package #:list-site)
 
+(defvar *year* "2012" "Is not used as for now")
+
 (defvar *root* "/home/maximo/WorkOnNow/list-site/")
 
 (defvar *result-root* (merge-pathnames (make-pathname
@@ -16,9 +18,15 @@
 (default-defrule newline (and #\Newline (? whitespace))
   (:constant #\Space))
 
-(default-defrule paragraph (and (and (+ (and (or newline character)
-					     (! (and newline newline))))
-				     (? character))
+(default-defrule word (and (+ (and (! whitespace)
+				   character))
+			   (? whitespace))
+  (:destructure (word space)
+    (declare (ignore space))
+    (text word)))
+
+(default-defrule paragraph (and (+ (and (! (and newline newline))
+					(or newline character)))
 				(* newline))
   (:destructure (par-text newlines)
     (declare (ignore newlines))

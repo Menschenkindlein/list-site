@@ -2,24 +2,9 @@
 
 ;; Parser rules
 
-(default-copy-grammar main)
-
 (site-defrule main (* character)
   (:lambda (result)
-    (cons 'main-body (main-parse 'main (text result)))))
-
-(main-defrule main (+ (or article-vidget
-			  author-vidget)))
-
-(main-defrule author-vidget (and "author " paragraph)
-  (:destructure (a result)
-    (declare (ignore a))
-    (cons 'author-vidget (cdr result))))
-
-(main-defrule article-vidget (and "article " paragraph)
-  (:destructure (a result)
-    (declare (ignore a))
-    (cons 'article-vidget (cdr result))))
+    (read-from-string (text result))))
 
 ;; Printers rules
 
@@ -64,22 +49,28 @@
     <title>Main page of the LIST SITE</title>
   </head>
   <body>
-    <h1>The LIST SITE</h1>
-    <div class=\"vidgets\">
-    ~{~a~^~%~}
+    <div id=\"body\">
+      <h1>The LIST SITE</h1>
+      <div class=\"vidgets\">
+~{        ~a~^~%~}
+      </div>
     </div>
   </body>
 </html>"                      (html (get-item 'style "main"))
                               (mapcar #'html vidgets))))
 
 (add-html-structure 'author-vidget
-		    (lambda (author)
-		      (format nil "<div class=\"author\">~@
-                                     <p>~a</p>~@
-                                   </div>" (html (get-item 'author author)))))
+		    (lambda (author &optional (class "default"))
+		      (format nil "<span class=\"~a\"><div class=\"author\">~
+                                     <p>~a</p>~
+                                   </div></span>"
+			      class
+			      (html (get-item 'author author)))))
 
 (add-html-structure 'article-vidget
-		    (lambda (article)
-		      (format nil "<div class=\"article\">~@
-                                     <p>~a</p>~@
-                                   </div>" (html (get-item 'article article)))))
+		    (lambda (article &optional (class "default"))
+		      (format nil "<span class=\"~a\"><div class=\"article\">~
+                                     <p>~a</p>~
+                                   </div></span>"
+			      class
+			      (html (get-item 'article article)))))
