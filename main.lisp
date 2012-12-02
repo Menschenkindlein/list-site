@@ -1,23 +1,12 @@
 (in-package #:list-site)
 
-;; (defun find-all-files-on-the-depth (dir depth)
-;;   (let ((directory (cons :relative (make-list depth :initial-element :wild))))
-;;     (remove-if (lambda (x) (find x (directory
-;; 				    (merge-pathnames
-;; 				     (make-pathname :directory directory
-;; 						    :name :wild
-;; 						    :type nil)
-;; 				     dir))
-;; 				 :test #'equal))
-;; 	       (directory
-;; 		(merge-pathnames
-;; 		 (make-pathname :directory directory
-;; 				:name :wild
-;; 				:type :wild)
-;; 		 dir)))))
-
 (defun build ()
-  (cl-fad:delete-directory-and-files (merge-pathnames "result" *root*)
-				     :if-does-not-exist :ignore)
+  (cl-fad:delete-directory-and-files
+   (make-my-pathname :directory '(:relative "result"))
+   :if-does-not-exist :ignore)
+  (setf list-site::*database* (make-hash-table :test #'equal))
+  (init)
   (let ((*package* (find-package :list-site)))
-    (html (get-item 'main "test"))))
+    (consume))
+  (save-databases)
+  (html (db-get "2012" 'main "test")))

@@ -2,13 +2,26 @@
 
 ;; Parser rules
 
+(defun get-year ()
+  (princ-to-string
+   (nth 5 (multiple-value-list
+	   (decode-universal-time
+	    (get-universal-time))))))
+
+(setf (gethash 'article *default-classificators*)
+      (get-year))
+
+(setf (gethash 'article *reading-funcs*)
+      (lambda (stream)
+	(article-parse
+	 'article
+	 (read-to-string stream))))
+
 (default-copy-grammar article)
 
-(site-defrule article (* character)
+(article-defrule article (and title authors raw-text)
   (:lambda (result)
-    (cons 'article-body (article-parse 'article (text result)))))
-
-(article-defrule article (and title authors raw-text))
+    (cons 'article result)))
 
 (article-defrule title paragraph
   (:lambda (result)
@@ -20,12 +33,11 @@
 
 (article-defrule authors-list (+ inner-author))
 
-(article-defrule inner-author (and (and (+ (and character (! #\Space)))
-					(? character))
+(article-defrule inner-author (and (+ (and (! #\Space) character))
 				   (? #\Space))
   (:destructure (author rest)
     (declare (ignore rest))
-    (list 'inner-author (text author))))
+    (list 'inner-author (text author) (text author))))
 
 (article-defrule raw-text (* character)
   (:lambda (result)
@@ -37,51 +49,21 @@
 				       inner-article
 				       character)))
 
-(article-defrule emphasis (and "em{" (+ (and character (! #\}))) character "}")
-  (:destructure (em text lc me)
+(article-defrule emphasis (and "em{" (+ (and (! #\}) character)) "}")
+  (:destructure (em text me)
     (declare (ignore em me))
-    (list 'emphasis (text text lc))))
+    (list 'emphasis (text text))))
 
 (article-defrule inner-article (and "article{"
-				    (+ (and character (! #\})))
+				    (+ (and (! #\}) character))
 				    character "}")
-  (:destructure (em text lc me)
+  (:destructure (em text me)
     (declare (ignore em me))
-    (list 'inner-article (text text lc))))
+    (list 'inner-article (text text))))
 
 ;; Printers rules
 
 (add-html-structure 'article
-		    (lambda (name body)
-		      (let ((filename
-			     (make-pathname
-			      :directory
-			      '(:relative "articles")
-			      :name name
-			      :type "html")))
-			(let ((*local-root* "../")
-			      (filename (merge-pathnames filename
-							 *result-root*)))
-			  (unless
-			      (probe-file filename)
-			    (ensure-directories-exist filename)
-			    (with-open-file
-				(file filename
-				      :direction :output
-				      :if-exists :error
-				      :if-does-not-exist :create)
-			      (format file (html body)))))
-			(if *local-root*
-			    (setf filename
-				  (merge-pathnames
-				   filename
-				   *local-root*)))
-			(format nil
-				"<a href=\"~a\">~a</a>"
-				filename
-				(second (second body))))))
-
-(add-html-structure 'article-body
 		    (lambda (title authors text)
 		      (format nil
 			      "~
@@ -111,12 +93,20 @@
 			      (mapcar #'html authors))))
 
 (add-html-structure 'inner-author
-		    (lambda (author)
-		      (format nil (html (get-item 'author author)))))
+		    (lambda (link-text author &optional classificator)
+		      (format nil "<a href=\"~a\">~a</a>"
+			      (html (db-get classificator
+					    'author
+					    author))
+			      link-text)))
 
 (add-html-structure 'inner-article
-		    (lambda (article)
-		      (format nil (html (get-item 'article article)))))
+		    (lambda (link-text article &optional classificator)
+		      (format nil "<a href=\"~a\">~a</a>"
+			      (html (db-get classificator
+					    'article
+					    article))
+			      link-text)))
 
 (add-html-structure 'text
 		    (lambda (text)
