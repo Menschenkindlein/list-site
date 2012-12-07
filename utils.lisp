@@ -1,20 +1,30 @@
 (in-package #:list-site)
 
-(defvar *default-classificators* (make-hash-table))
+;; *OBJECTS*
+
+(defvar *objects* (make-hash-table))
+
+(defun get-reading (object-type)
+  (getf (gethash object-type *objects*)
+	:reading-function))
+
+(defun add-reading (object-type reading-function)
+  (setf (getf (gethash object-type *objects*)
+	      :reading-function)
+	reading-function))
 
 (defun get-default (object-type)
-  (gethash object-type *default-classificators*))
+  (getf (gethash object-type *objects*)
+	:default-classificator))
 
-(defun name-to-string (name &optional plural)
-  (format nil "~(~a~)~:[~;s~]" name plural))
+(defun add-default (object-type default-classificator)
+  (setf (getf (gethash object-type *objects*)
+	      :default-classificator)
+	default-classificator))
 
-(defun read-from-file (filespec)
-  (with-open-file (file filespec)
-    (read file)))
+;; PATHNAMES
 
-(defvar *root* (make-pathname :directory
-			      (pathname-directory
-			       (asdf:system-definition-pathname :list-site))))
+(defvar *root* nil "Directory where the engine work.")
 
 (defun make-my-pathname (&key directory name type)
   (merge-pathnames
@@ -23,52 +33,15 @@
 		  :type type)
    *root*))
 
-(defun get-databases ()
-  (loop for database in (directory
-			 (make-my-pathname
-			  :directory '(:relative "database"
-					         :wild)
-			  :name :wild
-			  :type "db"))
-     collecting
-       (cons (cons
-	      (pathname-name database)
-	      (intern (string-upcase
-		       (car (last (pathname-directory database))))
-		      (find-package :list-site)))
-	     database)))
+(defun make-rel-dir (&rest directories)
+  (make-pathname :directory (cons :relative directories)))
 
-(defun get-objects-to-consume ()
-  (loop for object in (directory
-			 (make-my-pathname
-			  :directory '(:relative "source"
-				                 :wild
-				                 :wild)
-			  :name :wild
-			  :type :wild))
-     collecting
-       (list (intern (string-upcase                 ;; object-type
-		      (pathname-type object))
-		     (find-package :list-site))
-	     (car (last (pathname-directory object))) ; classificator
-	     (pathname-name object)                 ;; object-name
-	     object)))                              ;; path
+;; NAME-TO-STRING
 
-;; (defmacro make-path (object-type name &key result classificator)
-;;   (let ((consuming-path
-;; 	 (make-my-pathname :directory '(:relative "source")))
-;; 	(result-path
-;; 	 (make-my-pathname :directory '(:relative "result"))))
-;;     `(let ((classificator (or ,classificator
-;; 			      (get-default ,object-type))))
-;;        (merge-pathnames
-;; 	(make-pathname :directory `(:relative ,classificator
-;; 					      ,(name-to-string ,object-type t))
-;; 		       :name ,name
-;; 		       :type (name-to-string ,object-type))
-;; 	,(if result
-;; 	     result-path
-;; 	     consuming-path)))))
+(defun name-to-string (name &optional plural)
+  (format nil "~(~a~)~:[~;s~]" name plural))
+
+;; READING
 
 (defun read-to-string (stream)
   (loop for line = (read-line stream nil) with result doing

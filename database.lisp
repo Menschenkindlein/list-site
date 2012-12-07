@@ -2,13 +2,34 @@
 
 (defvar *database* (make-hash-table :test #'equal))
 
+(defun get-databases ()
+  (loop for database in (directory
+			 (make-my-pathname
+			  :directory '(:relative "database"
+					         :wild)
+			  :name :wild
+			  :type "db"))
+     collecting
+       (cons (cons
+	      (pathname-name database)
+	      (intern (string-upcase
+		       (car (last (pathname-directory database))))
+		      (find-package :list-site)))
+	     database)))
+
 (defun load-databases ()
+  (princ #\Newline)
+  (princ "Loading databases...")
   (loop for (database-spec . pathname) in (get-databases) doing
-       (setf (gethash database-spec *database*) (read-from-file pathname))))
+       (setf (gethash database-spec *database*)
+	     (with-open-file (file pathname)
+	       (read file))))
+  (princ "done"))
 
 (defun save-databases ()
-  (ensure-directories-exist (make-my-pathname
-			     :directory '(:relative "database")))
+  (cl-fad:delete-directory-and-files
+   (make-my-pathname :directory '(:relative "database"))
+   :if-does-not-exist :ignore)
   (maphash (lambda (database-spec value)
 	     (let ((path (make-my-pathname
 			  :directory `(:relative "database"
@@ -20,7 +41,6 @@
 	       (with-open-file (file
 				path
 				:direction :output
-				:if-exists :overwrite
 				:if-does-not-exist :create)
 		 (print value file))))
 	   *database*))

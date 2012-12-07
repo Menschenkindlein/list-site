@@ -1,23 +1,64 @@
 (in-package #:list-site)
 
-(defun init (&optional source)
-  (unless source
-    (load-databases)))
+(defun init (&rest args)
+  (declare (ignore args))
+  (setf *root* *default-pathname-defaults*)
+  (load-objects-declarations)
+  (load-databases)
+  (let ((*package* (find-package :list-site-user)))
+    (loop
+       (print 'list-site-user::list-site>) (finish-output)
+       (print (restart-case (eval (read))
+		(return-to-toplevel () "Evaluation aborted"))))))
+
+(defun get-objects-to-consume ()
+  (let (result)
+    (maphash (lambda (key value)
+	       (declare (ignore value))
+	       (push
+		(loop for object in
+		     (directory
+		      (make-my-pathname
+		       :directory `(:relative "source"
+					      ,(name-to-string key t)
+					      :wild)
+		       :name :wild
+		       :type (name-to-string key)))
+		   collecting
+		     (list key                                    ;; object-type
+			   (car (last (pathname-directory object))) ; classificator
+			   (pathname-name object)                 ;; object-name
+			   object))                               ;; path
+		result))
+	     *objects*)
+    (apply #'append result)))
 
 (defun consume ()
   (loop
      for (object-type classificator name pathname)
      in (get-objects-to-consume)
+     with *package* = (find-package :list-site)
      doing
+       (print (list object-type classificator name pathname))
        (with-open-file (file pathname)
 	 (db-save classificator object-type name
-		  (funcall (gethash object-type *reading-funcs*)
+		  (print (funcall (get-reading object-type)
 			   file))))
-  (cl-fad:delete-directory-and-files
-   (make-my-pathname :directory '(:relative "source"))
-   :if-does-not-exist :ignore))
+     doing
+       (delete-file pathname))
+  (save-databases))
 
 (defun excrect (object name &optional classificator)
   (edit (db-get (or classificator (get-default object))
 		object
 		name)))
+
+(defun build (name &optional classificator (type 'index))
+  (print (list name classificator type))
+  (cl-fad:delete-directory-and-files
+   (make-my-pathname :directory '(:relative "result"))
+   :if-does-not-exist :ignore)
+  (html (db-get classificator type name)))
+
+(defun exit ()
+  (sb-ext:quit))
