@@ -20,7 +20,8 @@
 (defun load-databases ()
   (princ #\Newline)
   (princ "Loading databases...")
-  (loop for (database-spec . pathname) in (get-databases) doing
+  (loop for (database-spec . pathname) in (get-databases)
+     with *package* = (find-package :list-site) doing
        (setf (gethash database-spec *database*)
 	     (with-open-file (file pathname)
 	       (read file))))
@@ -48,7 +49,7 @@
 (defun db-get (classificator object-type name)
   (unless classificator
     (setf classificator (get-default object-type)))
-  (list 'object name classificator
+  (list 'object name classificator object-type
 	(cdr (assoc name
 		    (gethash (cons classificator object-type) *database*)
 		    :test #'string=))))

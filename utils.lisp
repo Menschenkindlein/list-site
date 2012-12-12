@@ -8,19 +8,13 @@
   (getf (gethash object-type *objects*)
 	:reading-function))
 
-(defun add-reading (object-type reading-function)
-  (setf (getf (gethash object-type *objects*)
-	      :reading-function)
-	reading-function))
+(defun get-default-structure (object-type)
+  (getf (gethash object-type *objects*)
+	:default-structure))
 
 (defun get-default (object-type)
   (getf (gethash object-type *objects*)
 	:default-classificator))
-
-(defun add-default (object-type default-classificator)
-  (setf (getf (gethash object-type *objects*)
-	      :default-classificator)
-	default-classificator))
 
 ;; PATHNAMES
 

@@ -12,9 +12,29 @@
      doing (load object))
   (princ "done"))
 
-(defmacro make-object (name &key (default-classificator "default")
-		                 (reading-function #'read))
-  `(progn
-     (export ',name)
-     (add-default ',name ,default-classificator)
-     (add-reading ',name ,reading-function)))
+(defun make-object (name &key (default-classificator "default")
+		              (reading-function #'read)
+		              (default-structure (list name "")))
+  (export name)
+  (setf (gethash name *objects*)
+	(list :default-structure default-structure
+	      :default-classificator default-classificator
+	      :reading-function reading-function)))
+
+(defun add-default (object-type default-classificator)
+  (setf (getf (gethash object-type *objects*)
+	      :default-classificator)
+	default-classificator))
+
+;; Example object
+
+(make-object 'verbatim
+	     :reading-function (lambda (stream)
+				 (list 'verbatim
+				       (read-to-string stream))))
+
+(add-edit-structure 'verbatim
+		    (lambda (verbatim)
+		      verbatim))
+
+;; End of example

@@ -3,6 +3,7 @@
 (defun init (&rest args)
   (declare (ignore args))
   (setf *root* *default-pathname-defaults*)
+  (load-printers-declarations)
   (load-objects-declarations)
   (load-databases)
   (let ((*package* (find-package :list-site-user)))
@@ -35,30 +36,32 @@
 
 (defun consume ()
   (loop
+     for i by 1
      for (object-type classificator name pathname)
      in (get-objects-to-consume)
      with *package* = (find-package :list-site)
      doing
-       (print (list object-type classificator name pathname))
        (with-open-file (file pathname)
 	 (db-save classificator object-type name
-		  (print (funcall (get-reading object-type)
-			   file))))
+		  (funcall (get-reading object-type)
+			   file)))
      doing
-       (delete-file pathname))
-  (save-databases))
+       (delete-file pathname)
+     finally (progn (save-databases)
+		    (return
+		      (format nil "Consumed ~r object~:p" i)))))
 
 (defun excrect (object name &optional classificator)
-  (edit (db-get (or classificator (get-default object))
-		object
-		name)))
+  (let ((*package* (find-package :list-site)))
+    (edit (db-get (or classificator (get-default object))
+		  object
+		  name))))
 
-(defun build (name &optional classificator (type 'index))
-  (print (list name classificator type))
+(defun build (printer type name &optional classificator)
   (cl-fad:delete-directory-and-files
    (make-my-pathname :directory '(:relative "result"))
    :if-does-not-exist :ignore)
-  (html (db-get classificator type name)))
+  (funcall printer (db-get classificator type name)))
 
 (defun exit ()
   (sb-ext:quit))

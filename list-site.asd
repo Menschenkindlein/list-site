@@ -4,6 +4,7 @@
   :components ((:file "package")
 	       (:file "utils")
 	       (:file "database")
-	       (:file "object")
+	       (:file "printer")
 	       (:file "grammar")
+	       (:file "object")
 	       (:file "engine")))
