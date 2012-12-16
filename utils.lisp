@@ -12,10 +12,6 @@
   (getf (gethash object-type *objects*)
 	:default-structure))
 
-(defun get-default (object-type)
-  (getf (gethash object-type *objects*)
-	:default-classificator))
-
 ;; PATHNAMES
 
 (defvar *root* nil "Directory where the engine work.")

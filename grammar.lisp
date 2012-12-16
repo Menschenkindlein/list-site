@@ -32,14 +32,13 @@
 	       (prin1-to-string unknown)))
 
 (add-edit-structure 'object
-		    (lambda (name classificator object-type body)
+		    (lambda (name object-type body)
 		      (let ((filename
 			     (merge-pathnames
 			      (make-pathname
 			       :directory `(:relative "source"
 						      ,(name-to-string
-							object-type t)
-						      ,classificator)
+							object-type))
 			       :name name
 			       :type (name-to-string object-type))
 			      *root*)))
