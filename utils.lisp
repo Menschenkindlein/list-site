@@ -1,17 +1,5 @@
 (in-package #:list-site)
 
-;; *OBJECTS*
-
-(defvar *objects* (make-hash-table))
-
-(defun get-reading (object-type)
-  (getf (gethash object-type *objects*)
-	:reading-function))
-
-(defun get-default-structure (object-type)
-  (getf (gethash object-type *objects*)
-	:default-structure))
-
 ;; PATHNAMES
 
 (defvar *root* nil "Directory where the engine work.")

@@ -1,5 +1,9 @@
 (in-package #:list-site)
 
+;; *OBJECTS*
+
+(defvar *objects* (make-hash-table))
+
 (defun load-objects-declarations ()
   (princ #\Newline)
   (princ "Loading objects declarations...") (finish-output)
@@ -14,12 +18,28 @@
 
 (defun make-object (name &key (default-classificator "default")
 		              (reading-function #'read)
-		              (default-structure (list name "")))
+		              (default-structure (list name ""))
+                              (helper-maker (lambda (&rest rest)
+                                              (declare (ignore rest)))))
   (export name)
   (setf (gethash name *objects*)
 	(list :default-structure default-structure
 	      :default-classificator default-classificator
-	      :reading-function reading-function)))
+	      :reading-function reading-function
+              :helper-maker helper-maker)))
+
+(defun get-reading (object-type)
+  (getf (gethash object-type *objects*)
+	:reading-function))
+
+(defun get-default-structure (object-type)
+  (getf (gethash object-type *objects*)
+	:default-structure))
+
+(defun make-helper (object-type body)
+  (apply (getf (gethash object-type *objects*)
+               :helper-maker)
+         body))
 
 (defun add-default (object-type default-classificator)
   (setf (getf (gethash object-type *objects*)

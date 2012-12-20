@@ -43,16 +43,50 @@
 
 (defun db-get (object-type name)
   (list 'object name object-type
-	(cdr (assoc name
-		    (gethash object-type *database*)
-		    :test #'string=))))
+	(cdr (assoc (intern (string-upcase name) :list-site)
+                    (gethash object-type *database*)
+                    :key #'car))))
 
 (defun db-save (object-type name body)
-  (let ((dest (assoc name
-		     (gethash object-type *database*)
-		     :test #'string=)))
+  (let ((dest (assoc (intern (string-upcase name) :list-site)
+                     (gethash object-type *database*)
+                     :key #'car)))
     (if dest
-	(setf (cdr dest) body)
-	(setf (gethash object-type *database*)
-	      (acons name body (gethash object-type
-					*database*))))))
+        (setf (cdr dest) body)
+        (setf (gethash object-type *database*)
+              (acons (cons
+                      (intern (string-upcase name) :list-site)
+                      (make-helper object-type body))
+                     body
+                     (gethash object-type *database*))))))
+
+(defun db-select (object-type fn-selector)
+  (loop
+     for ((name . search-helper) . object) in (gethash object-type
+                                                       *database*)
+     with result
+     doing
+       (when (funcall fn-selector search-helper)
+         (push
+          (list 'object
+                (name-to-string name)
+                object-type
+                object)
+          result))
+       finally (return result)))
+
+(defmacro db-where (&rest clauses)
+  `#'(lambda (object)
+       (and
+        ,@(loop while clauses
+             collecting
+               (let ((field (pop clauses))
+                     (value (pop clauses)))
+                 (case value
+                   (:contains
+                    `(find ,(pop clauses)
+                           (getf object ,field)
+                           :test #'equal))
+                   (otherwise
+                    `(equal (getf object ,field)
+                            ,value))))))))
