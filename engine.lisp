@@ -20,8 +20,7 @@
 		(loop for object in
 		     (directory
 		      (make-my-pathname
-		       :directory `(:relative "source"
-					      ,(name-to-string key))
+		       :directory `(:relative "source")
 		       :name :wild
 		       :type (name-to-string key)))
 		   collecting

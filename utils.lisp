@@ -26,3 +26,8 @@
        (if line
 	   (push line result)
 	   (return (format nil "~{~a~%~}" (nreverse result))))))
+
+;; UTILS
+
+(defun convert-date (day month year)
+  (+ day (* month 32) (* (- year 2012) 512)))

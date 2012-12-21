@@ -4,6 +4,7 @@
 	#:ucg)
   (:export #:exit
 	   #:excrect
+           #:convert-date
 	   #:consume
 	   #:build))
 

@@ -36,9 +36,7 @@
 		      (let ((filename
 			     (merge-pathnames
 			      (make-pathname
-			       :directory `(:relative "source"
-						      ,(name-to-string
-							object-type))
+			       :directory `(:relative "source")
 			       :name name
 			       :type (name-to-string object-type))
 			      *root*)))

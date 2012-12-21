@@ -52,7 +52,9 @@
                      (gethash object-type *database*)
                      :key #'car)))
     (if dest
-        (setf (cdr dest) body)
+        (progn (setf (cdr dest) body)
+               (setf (cdr (car dest))
+                     (make-helper object-type body)))
         (setf (gethash object-type *database*)
               (acons (cons
                       (intern (string-upcase name) :list-site)
@@ -87,6 +89,10 @@
                     `(find ,(pop clauses)
                            (getf object ,field)
                            :test #'equal))
+                   (:custom-compare
+                    `(funcall ,(pop clauses)
+                              (getf object ,field)
+                              ,(pop clauses)))
                    (otherwise
                     `(equal (getf object ,field)
                             ,value))))))))
