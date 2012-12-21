@@ -62,10 +62,18 @@
                      body
                      (gethash object-type *database*))))))
 
-(defun db-select (object-type fn-selector)
+(defun db-select (object-type fn-selector &optional sorted-by (sorting-fn #'<))
   (loop
-     for ((name . search-helper) . object) in (gethash object-type
-                                                       *database*)
+     for ((name . search-helper) . object)
+     in (if sorted-by
+            (setf (gethash object-type *database*)
+                  (sort (gethash object-type *database*)
+                        sorting-fn
+                        :key
+                        (lambda (object)
+                          (getf (cdr (car object))
+                                sorted-by))))
+            (gethash object-type *database*))
      with result
      doing
        (when (funcall fn-selector search-helper)
@@ -75,7 +83,8 @@
                 object-type
                 object)
           result))
-       finally (return result)))
+       finally
+       (return result)))
 
 (defmacro db-where (&rest clauses)
   `#'(lambda (object)
