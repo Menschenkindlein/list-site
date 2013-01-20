@@ -44,7 +44,7 @@
 			   file)))
      doing
        (delete-file pathname)
-     finally (progn (save-databases)
+     finally (progn (unless (zerop i) (save-databases))
 		    (return
 		      (format nil "Consumed ~r object~:p" i)))))
 

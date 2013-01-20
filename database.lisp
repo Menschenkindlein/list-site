@@ -6,40 +6,48 @@
   (loop for database in (directory
 			 (make-my-pathname
 			  :directory '(:relative "database")
-			  :name :wild
-			  :type "db"))
+			  :name :wild))
      collecting
        (cons (intern (string-upcase
-		      (pathname-name database))
+		      (car (last (pathname-directory database))))
 		     (find-package :list-site))
 	     database)))
 
 (defun load-databases ()
   (princ #\Newline)
   (princ "Loading databases...")
-  (loop for (database-spec . pathname) in (get-databases)
+  (loop for (database-spec . database-dir) in (get-databases)
      with *package* = (find-package :list-site) doing
        (setf (gethash database-spec *database*)
-	     (with-open-file (file pathname)
-	       (read file))))
+	     (loop for pathname in (directory
+				    (merge-pathnames
+				     (make-pathname :name :wild
+						    :type "db")
+				     database-dir))
+		collecting
+		  (with-open-file (file pathname)
+		    (read file)))))
   (princ "done"))
 
 (defun save-databases ()
   (cl-fad:delete-directory-and-files
    (make-my-pathname :directory '(:relative "database"))
    :if-does-not-exist :ignore)
-  (maphash (lambda (database-spec value)
-	     (let ((path (make-my-pathname
-			  :directory `(:relative "database")
-			  :name (name-to-string database-spec)
-			  :type "db")))
-	       (ensure-directories-exist path)
-	       (with-open-file (file
-				path
-				:direction :output
-				:if-does-not-exist :create)
-		 (print value file))))
-	   *database*))
+  (maphash (lambda (database-spec database)
+	     (loop for item in database doing
+		  (let ((path (make-my-pathname
+			       :directory `(:relative "database"
+						      ,(name-to-string
+							database-spec))
+			       :name (name-to-string (car (car item)))
+			       :type "db")))
+		    (ensure-directories-exist path)
+		    (with-open-file (file
+				     path
+				     :direction :output
+				     :if-does-not-exist :create)
+		      (print item file)))))
+	     *database*))
 
 (defun db-get (object-type name)
   (list 'object name object-type

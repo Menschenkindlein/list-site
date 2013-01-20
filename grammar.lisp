@@ -27,31 +27,31 @@
 ;; PRINTING
 
 (def-printer edit
-    :terminal (lambda (terminal) (prin1-to-string terminal))
+    :terminal (lambda (terminal) (princ-to-string terminal))
     :default (lambda (&rest unknown)
 	       (prin1-to-string unknown)))
 
-(add-edit-structure 'object
-		    (lambda (name object-type body)
-		      (let ((filename
-			     (merge-pathnames
-			      (make-pathname
-			       :directory `(:relative "source")
-			       :name name
-			       :type (name-to-string object-type))
-			      *root*)))
-			(unless (probe-file filename)
-			  (ensure-directories-exist filename)
-			  (with-open-file
-			      (file filename
-				    :direction :output
-				    :if-exists :error
-				    :if-does-not-exist :create)
-			    (format file
-				    (edit
-				     (or body
-					 (progn
-					   (print "New object!")
-					   (get-default-structure
-					    object-type)))))))
-			filename)))
+(edit-defmacro 'object
+	       (lambda (name object-type body)
+		 (let ((filename
+			(merge-pathnames
+			 (make-pathname
+			  :directory `(:relative "source")
+			  :name name
+			  :type (name-to-string object-type))
+			 *root*)))
+		   (unless (probe-file filename)
+		     (ensure-directories-exist filename)
+		     (with-open-file
+			 (file filename
+			       :direction :output
+			       :if-exists :error
+			       :if-does-not-exist :create)
+		       (format file
+			       (edit
+				(or body
+				    (progn
+				      (print "New object!")
+				      (get-default-structure
+				       object-type)))))))
+		   filename)))

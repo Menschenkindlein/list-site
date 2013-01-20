@@ -15,6 +15,6 @@
 (defmacro def-printer (name &key terminal default)
   `(progn
      (export ',name)
-     (ucg::make-printer ,name
-			:terminal ,terminal
-			:default ,default)))
+     (ucg::make-eval ,name
+		     :terminal ,terminal
+		     :default ,default)))
